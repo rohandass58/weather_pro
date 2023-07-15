@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather Forecast App</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Get CSRF token from cookie
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Set CSRF token as default header for AJAX requests
+        var csrftoken = getCookie('csrftoken');
+        $.ajaxSetup({
+            headers: { 'X-CSRFToken': csrftoken }
+        });
+    </script>
+</head>
+<body>
+    <h1>Weather Forecast App</h1>
+
+    <button id="get-current-location-btn">Get Current Location</button>
+
+    <label for="lat">Latitude:</label>
+    <input type="text" id="lat">
+
+    <label for="lon">Longitude:</label>
+    <input type="text" id="lon">
+
+    <select id="detailing-type">
+        <option value="minute">Minute Forecast</option>
+        <option value="hourly">Hourly Forecast</option>
+        <option value="daily">Daily Forecast</option>
+    </select>
+
+    <button id="get-weather-btn">Get Weather</button>
+
+    <div id="weather-data"></div>
+
+    <script>
+        // Get current location using Google Maps Geolocation API
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var lat = position.coords.latitude;
+                    var lon = position.coords.longitude;
+                    document.getElementById('lat').value = lat;
+                    document.getElementById('lon').value = lon;
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        // Add event listener to "Get Current Location" button
+        document.getElementById('get-current-location-btn').addEventListener('click', getCurrentLocation);
+
+        // Retrieve weather data from Django API
+        // Retrieve weather data from Django API
+function getWeatherData() {
+    var lat = document.getElementById('lat').value;
+    var lon = document.getElementById('lon').value;
+    var detailingType = document.getElementById('detailing-type').value;
+
+    var data = {
+        latitude: lat,
+        longitude: lon,
+        detailing_type: detailingType
+    };
+
+    fetch('/api/weather/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(data),
+    })
+        .then(response => response.json())
+        .then(data => {
+            // Handle the weather data response here
+            displayWeatherData(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
+
+// Display weather data on the page
+function displayWeatherData(data) {
+    var weatherDataElement = document.getElementById('weather-data');
+    weatherDataElement.innerHTML = '';
+
+    // Create a new <pre> element to display the JSON data
+    var preElement = document.createElement('pre');
+    preElement.textContent = JSON.stringify(data, null, 2);
+
+    // Append the <pre> element to the weatherDataElement
+    weatherDataElement.appendChild(preElement);
+}
+
+// Add event listener to "Get Weather" button
+document.getElementById('get-weather-btn').addEventListener('click', getWeatherData);    </script>
+</body>
+</html>
